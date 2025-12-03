@@ -28,9 +28,13 @@ def get_available_airports() -> Result[list]:
 
 
 def configure_new_game(difficulty: str, player_name: str) -> Result[int]:
-    difficulty = Difficulty(difficulty.strip().lower())
+    try:
+        difficulty = Difficulty(difficulty.strip().lower())
+    except ValueError:
+        difficulty = None
+
     if difficulty is None:
-        return Result.failure("Invalid difficulty level. Choose from: easy, medium, hard")
+        return Result.failure("Invalid difficulty level. Choose from: 'easy', 'medium', 'hard'")
 
     db = _connect_to_db()
     if db.is_error():
@@ -95,12 +99,11 @@ def update_game_state(game_id: int, current_airport_id: int, passed_challenge: b
         return Result.failure(db.error)
     db = db.value
 
-    game_session = GameSession(db)
-    if not game_session.load_session(game_id):
-        db.disconnect()
-        return Result.failure("Invalid game session ID")
-
     try:
+        game_session = GameSession(db)
+        if not game_session.load_session(game_id):
+            return Result.failure("Invalid game session ID")
+
         airport = Airport(db).get_airport_by_id(current_airport_id)
         country = Country(db).get_country_by_code(airport.country_code)
 
@@ -128,12 +131,11 @@ def get_game_state(session_id: int) -> Result[dict]:
         return Result.failure(db.error)
     db = db.value
 
-    game_session = GameSession(db)
-    if not game_session.load_session(session_id):
-        db.disconnect()
-        return Result.failure("Invalid game session ID")
-
     try:
+        game_session = GameSession(db)
+        if not game_session.load_session(session_id):
+            return Result.failure("Invalid game session ID")
+
         state = game_session.get_game_state()
         return Result.success(state)
     except Exception as ex:
@@ -149,19 +151,18 @@ def update_session_status(session_id: int, status: str) -> ResultNoValue:
         status = None
 
     if status is None:
-        return ResultNoValue.failure("Invalid session status, choose from : active, won, lost, abandoned")
+        return ResultNoValue.failure("Invalid session status, choose from : 'active', 'won', 'lost', 'abandoned'")
 
     db = _connect_to_db()
     if db.is_error():
         return ResultNoValue.failure(db.error)
     db = db.value
 
-    game_session = GameSession(db)
-    if not game_session.load_session(session_id):
-        db.disconnect()
-        return ResultNoValue.failure("Invalid game session ID")
-
     try:
+        game_session = GameSession(db)
+        if not game_session.load_session(session_id):
+            return ResultNoValue.failure("Invalid game session ID")
+
         game_session.update_status(status)
         return ResultNoValue.success()
     except Exception as ex:
