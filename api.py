@@ -4,10 +4,19 @@ from data import Difficulty, ChallengeType, OpenQuestion, MultipleChoiceQuestion
 from models import DatabaseConnection, Airport, Player, GameSession, Challenge, Country
 
 
-def get_available_airports() -> Result[list]:
+def _connect_to_db() -> Result[DatabaseConnection]:
     db = DatabaseConnection()
-    if not db.connect():
-        return Result.failure("Database connection failed")
+    connection_result = db.connect()
+    if not connection_result.is_success():
+        return Result.failure(f"Database connection failed: {connection_result.error}")
+    return Result.success(db)
+
+
+def get_available_airports() -> Result[list]:
+    db = _connect_to_db()
+    if db.is_error():
+        return Result.failure(db.error)
+    db = db.value
 
     try:
         airports = Airport(db).get_all_airports()
@@ -23,9 +32,10 @@ def configure_new_game(difficulty: str, player_name: str) -> Result[int]:
     if difficulty is None:
         return Result.failure("Invalid difficulty level. Choose from: easy, medium, hard")
 
-    db = DatabaseConnection()
-    if not db.connect():
-        return Result.failure("Database connection failed")
+    db = _connect_to_db()
+    if db.is_error():
+        return Result.failure(db.error)
+    db = db.value
 
     try:
         player = Player(db)
@@ -50,9 +60,10 @@ def configure_new_game(difficulty: str, player_name: str) -> Result[int]:
 
 
 def get_challenge(session_id: int) -> Result[OpenQuestion | MultipleChoiceQuestion]:
-    db = DatabaseConnection()
-    if not db.connect():
-        return Result.failure("Database connection failed")
+    db = _connect_to_db()
+    if db.is_error():
+        return Result.failure(db.error)
+    db = db.value
 
     game_session = GameSession(db)
     if not game_session.load_session(session_id):
@@ -79,9 +90,10 @@ def get_challenge(session_id: int) -> Result[OpenQuestion | MultipleChoiceQuesti
 
 
 def update_game_state(game_id: int, current_airport_id: int, passed_challenge: bool) -> Result[dict]:
-    db = DatabaseConnection()
-    if not db.connect():
-        return Result.failure("Database connection failed")
+    db = _connect_to_db()
+    if db.is_error():
+        return Result.failure(db.error)
+    db = db.value
 
     game_session = GameSession(db)
     if not game_session.load_session(game_id):
@@ -111,9 +123,10 @@ def update_game_state(game_id: int, current_airport_id: int, passed_challenge: b
 
 
 def get_game_state(session_id: int) -> Result[dict]:
-    db = DatabaseConnection()
-    if not db.connect():
-        return Result.failure("Database connection failed")
+    db = _connect_to_db()
+    if db.is_error():
+        return Result.failure(db.error)
+    db = db.value
 
     game_session = GameSession(db)
     if not game_session.load_session(session_id):
@@ -138,9 +151,10 @@ def update_session_status(session_id: int, status: str) -> ResultNoValue:
     if status is None:
         return ResultNoValue.failure("Invalid session status, choose from : active, won, lost, abandoned")
 
-    db = DatabaseConnection()
-    if not db.connect():
-        return ResultNoValue.failure("Database connection failed")
+    db = _connect_to_db()
+    if db.is_error():
+        return ResultNoValue.failure(db.error)
+    db = db.value
 
     game_session = GameSession(db)
     if not game_session.load_session(session_id):

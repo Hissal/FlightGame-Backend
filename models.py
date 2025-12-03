@@ -11,14 +11,13 @@ class DatabaseConnection:
         self.connection = None
         self.cursor = None
 
-    def connect(self):
+    def connect(self) -> ResultNoValue:
         try:
             self.connection = mysql.connector.connect(**Config.get_db_config())
             self.cursor = self.connection.cursor(dictionary=True)
-            return True
+            return ResultNoValue().success()
         except mysql.connector.Error as e:
-            print(f"Database connection error: {e}")
-            return False
+            return ResultNoValue.failure(f"Database connection error: {e}")
 
     def disconnect(self):
         if self.cursor:
