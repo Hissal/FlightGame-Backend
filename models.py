@@ -77,6 +77,13 @@ class Player:
                 return self.create_or_get_player(name)
         return False
 
+    def get_player_by_id(self, player_id: int) -> ResultNoValue:
+        query = "SELECT name FROM player WHERE id = %s"
+        result = self.db.execute_query(query, (player_id,))
+        if result and self.create_or_get_player(result[0]['name']):
+            return ResultNoValue().success()
+        return ResultNoValue.failure("Player not found")
+
     def add_battery(self, amount: int):
         self.battery_level = max(0, min(100, self.battery_level + amount))
         query = "UPDATE player SET battery_level = %s WHERE id = %s"
@@ -91,6 +98,15 @@ class Player:
         self.difficulty_level = difficulty
         query = "UPDATE player SET difficulty_level = %s WHERE id = %s"
         self.db.execute_update(query, (difficulty.value, self.id))
+
+    def get_player_info(self) -> PlayerDto:
+        if self.name == "":
+            return PlayerDto(id=-1, name="Unknown")
+        else:
+            return PlayerDto(
+                id=self.id,
+                name=self.name
+            )
 
 
 class Country:
@@ -233,6 +249,8 @@ class GameSession:
     def get_game_state(self) -> Dict:
         airport_model = Airport(self.db)
         country_model = Country(self.db)
+        player_model = Player(self.db)
+        player_model.get_player_by_id(self.player_id)
         return {
             'session_id': self.id,
             'difficulty_level': self.difficulty_level.value,
@@ -244,7 +262,8 @@ class GameSession:
             'puzzles_solved': self.puzzles_solved,
             'countries_guessed': [country for country in self.countries_guessed],
             'status': self.status.value,
-            'score': self.score
+            'score': self.score,
+            'player': player_model.get_player_info()
         }
 
     def add_guessed_country(self, country: CountryDto):
