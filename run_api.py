@@ -1,4 +1,4 @@
-﻿# python
+# python
 from flask import Flask, request, jsonify
 import api
 

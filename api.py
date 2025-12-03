@@ -1,4 +1,4 @@
-﻿import random
+import random
 from config import Config
 from data import Difficulty, ChallengeType, OpenQuestion, MultipleChoiceQuestion, Result, ResultNoValue, SessionStatus
 from models import DatabaseConnection, Airport, Player, GameSession, Challenge, Country

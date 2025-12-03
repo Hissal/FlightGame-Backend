@@ -1,4 +1,4 @@
-﻿import mysql.connector
+import mysql.connector
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 import json
